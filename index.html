@@ -1,0 +1,289 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>User List</title>
+
+    <!-- jquery plugin -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css" />   
+  </head>
+
+  <body>
+    <!-- <img src="0.png" alt="app logic logo" style="width:190px;height:110px;background-color:Azure"> -->
+    <input type="text" name="" id="myInput" style="background-color: Azure; width: 300px; height: 35px" placeholder="Search First Name here.." onkeyup="SearchFun()">
+
+    <div class="table-container">
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <td>Avatar</td>
+            <td>Id</td>
+            <td>First Name</td>
+            <td>Last Name</td>
+            <td>Email</td>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr>
+            <td>
+              <img
+                user-id="1"
+                class="user-profile-view-btn"
+                src="https://s3.amazonaws.com/uifaces/faces/twitter/calebogden/128.jpg"
+                alt="userImage"
+              />
+            </td>
+            <td>1</td>
+            <td>George</td>
+            <td>Bluth</td>
+            <td>george.bluth@reqres.in</td>
+          </tr>
+          <tr>
+            <td>
+              <img
+                user-id="2"
+                class="user-profile-view-btn"
+                src="https://s3.amazonaws.com/uifaces/faces/twitter/josephstein/128.jpg"
+                alt="userImage"
+              />
+            </td>
+            <td>2</td>
+            <td>Janet</td>
+            <td>Weaver</td>
+            <td>janet.weaver@reqres.in</td>
+          </tr>
+          <tr>
+            <td>
+              <img
+                user-id="3"
+                class="user-profile-view-btn"
+                src="https://s3.amazonaws.com/uifaces/faces/twitter/olegpogodaev/128.jpg"
+                alt="userImage"
+              />
+            </td>
+            <td>3</td>
+            <td>Emma</td>
+            <td>Wong</td>
+            <td>emma.wong@reqres.in</td>
+          </tr>
+          <tr>
+            <td>
+              <img
+                user-id="4"
+                class="user-profile-view-btn"
+                src="https://s3.amazonaws.com/uifaces/faces/twitter/marcoramires/128.jpg"
+                alt="userImage"
+              />
+            </td>
+            <td>4</td>
+            <td>Eve</td>
+            <td>Holt</td>
+            <td>eve.holt@reqres.in</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-container">
+      <div class="pagination">
+        <a href="#" name="paginationBtn" class="active">1</a>
+        <a href="#" name="paginationBtn" class="">2</a>
+        <a href="#" name="paginationBtn" class="">3</a>
+      </div>
+    </div>
+
+    <div class="user-details-pop-up-container" style="display: none"></div>
+    <div class="user-details-pop-up-container-temp" style="display: none">
+      <div class="user-details-pop-up">
+        <div class="form-control">
+          <div class="pop-up-close-btn">X</div>
+        </div>
+        <div class="form-control">
+          <img
+            id="user-img"
+            src="https://s3.amazonaws.com/uifaces/faces/twitter/calebogden/128.jpg"
+          />
+        </div>
+        <div class="form-control">
+          <label>Id</label>
+          <input id="user-id" type="text" value="" disabled="" />
+        </div>
+        <div class="form-control">
+          <label>First Name</label>
+          <input id="user-first-name" type="text" value="" disabled="" />
+        </div>
+        <div class="form-control">
+          <label>Last Name</label>
+          <input id="user-last-name" type="text" value="" disabled="" />
+        </div>
+        <div class="form-control">
+          <label>Email</label>
+          <input id="user-email" type="email" value="" disabled="" />
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const SearchFun = ()=>{
+        let filter = document.getElementById('myInput').value.toUpperCase();
+        let usersTable = document.getElementById('usersTable');
+        let tr = usersTable.getElementsByTagName('tr');
+        for (var i =0; i< tr.length; i++) {
+          let td = tr[i].getElementsByTagName('td')[2];
+          if (td) {
+            let textvalue = td.textContent ||td.innerHTML;
+            if(textvalue.toUpperCase().indexOf(filter) > -1){
+              tr[i].style.display="";
+            }
+            else{
+              tr[i].style.display = "none";
+            }
+          }
+        }
+      }  
+      // async forEach (help running code in sync)
+      async function asyncForEach(array, callback) {
+        for (let index = 0; index < array.length; index++) {
+          await callback(array[index], index, array);
+        }
+      }
+
+      //get userlist by page number
+      function getUsersByPageNumber(pageNumber) {
+        let users;
+        $.ajax({
+          url: "https://reqres.in/api/users",
+          type: "GET",
+          async: false,
+          data: {
+            page: pageNumber,
+          },
+          success: function (response) {
+            users = response.data;
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        });
+        return users;
+      }
+
+      //get userlist by page number array
+      async function getUsers(pageNumbers) {
+        let users = [];
+        await asyncForEach(pageNumbers, async (pageNumber, index) => {
+          let usersByPage = await getUsersByPageNumber(pageNumber);
+          users = users.concat(usersByPage);
+        });
+        return users;
+      }
+
+      //convert each user elmement in array into html string array.  --> html string table row <tr></tr>.
+      function convertObjToHtmlString(users) {
+        let usersTableBodyHtml = users.map((user) => {
+          return `<tr>
+                   <td><img user-id="${user.id}" class="user-profile-view-btn" src="${user.avatar}" alt="userImage" ></td>
+                   <td>${user.id}</td>
+                   <td>${user.first_name}</td>
+                   <td>${user.last_name}</td>
+                   <td>${user.email}</td>
+                   </tr>`;
+        });
+        return usersTableBodyHtml;
+      }
+
+      // 0 4    1   1*4 = 4    4-4 = 0
+      // 4,8    2   2*4 = 8    8-4 = 4
+      // 8,12   3   3*4 = 12   12-4 = 8
+      //get subArray indexs using pageNumber
+      function getFromToValue(pageNumber) {
+        let to = pageNumber * 4;
+        let from = to - 4;
+        return { from, to };
+      }
+
+      function getUserById(userId) {
+        let user;
+        $.ajax({
+          url: "https://reqres.in/api/users/" + userId,
+          type: "GET",
+          async: false,
+          success: function (response) {
+            user = response.data;
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        });
+        return user;
+      }
+
+      function userProfilePopUp(userId) {
+        try {
+          const user = getUserById(userId);
+          $("#user-img").attr("src", user.avatar);
+          $("#user-id").val(user.id);
+          $("#user-first-name").val(user.first_name);
+          $("#user-last-name").val(user.last_name);
+          $("#user-email").val(user.email);
+          $(".user-details-pop-up-container").show();
+          $(".user-details-pop-up-container-temp").show();
+        } catch (err) {
+          alert("sorry! some error occred");
+        }
+      }
+
+      function bindEventToUserProfileViewBtn() {
+        $(".user-profile-view-btn").bind("click", function () {
+          const userId = parseInt($(this).attr("user-id"));
+          userProfilePopUp(userId);
+        });
+      }
+
+      //render user list on screen
+      function renderUserOnTable(tableSelector, users, pageNumber) {
+        //sub Array
+        const fromTo = getFromToValue(pageNumber);
+        const subArray = users.slice(fromTo.from, fromTo.to);
+
+        //convert to string array
+        const userTableBodyHtml = convertObjToHtmlString(subArray);
+
+        // add each user to table
+        userTableBodyHtml.forEach((element) => {
+          $(tableSelector).append(element);
+        });
+
+        //bind event when user click on profile image
+        bindEventToUserProfileViewBtn();
+      }
+
+      //starting point
+      $(document).ready(async () => {
+        const pageNumbers = [1, 2];
+        const users = await getUsers(pageNumbers);
+        renderUserOnTable("#usersTableBody", users, 1);
+
+        //bind method pagination
+        $("[name=paginationBtn]").bind("click", function () {
+          //remove active class from other button and apply on current button
+          $("[name=paginationBtn]").removeClass("active");
+          $(this).addClass("active");
+
+          //get page number from text
+          const pageNumber = parseInt($(this).text());
+
+          //remove html from table body and then add new html to body
+          $("#usersTableBody").html("");
+          renderUserOnTable("#usersTableBody", users, pageNumber);
+        });
+
+        $(".pop-up-close-btn").bind("click", function () {
+          $(".user-details-pop-up-container").hide();
+          $(".user-details-pop-up-container-temp").hide();
+        });
+      });
+    </script>
+  </body>
+</html>
